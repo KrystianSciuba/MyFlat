@@ -8,7 +8,6 @@ import webbrowser
 
 
 class FlatFilter:
-
     pages = 5
     min_price = 300000
     max_price = 400000
@@ -18,7 +17,6 @@ class FlatFilter:
     min_m2_price = 0
     max_m2_price = 9500
     wanted_seller = "Dowolny"
-
     filter_value_if_no_data = 0
 
 
@@ -42,11 +40,11 @@ class MainScraper(BeautifulSoup):
             return False
 
     def secondary_filter_check(args, filter):
-        if args.pricem2 == 0:
+        if args.m2price == 0:
             price_filter_bool = filter.filter_value_if_no_data
         elif filter.max_price == 0:
             price_filter_bool = 1
-        elif filter.max_m2_price >= args.pricem2 >= filter.min_m2_price:
+        elif filter.max_m2_price >= args.m2price >= filter.min_m2_price:
             price_filter_bool = 1
         else:
             price_filter_bool = 0
@@ -97,7 +95,7 @@ class GrumtreeScraper(MainScraper):
                 if MainScraper.main_app_running:
                     single_flat = self.gumtree_single_ad_scan(single_ad)
                     if MainScraper.primary_filter_chceck(single_flat, filter=MainScraper.filter):
-                        self.get_flat_data_gumtree(single_flat)
+                        self.gumtree_get_flat_data(single_flat)
                         if MainScraper.secondary_filter_check(single_flat, filter=MainScraper.filter):
                             print("OK 2 + OK 1")
                             my_app.main_frame.result_table.add_line(single_flat)
@@ -122,18 +120,17 @@ class GrumtreeScraper(MainScraper):
         single_flat = FlatData(price=flat_price, district=flat_district, url=href)
         return single_flat
 
-    def get_flat_data_gumtree(self, args):
+    def gumtree_get_flat_data(self, args):
         source_code = requests.get(args.url)
         plain_text = source_code.text
         soup = BeautifulSoup(plain_text, features="html.parser")
         # TYTUŁ
         for flat_title in soup.find("div", {"class": "vip-title clearfix"}).findAll("span", {'class': 'myAdTitle'}):
             args.title = flat_title.string
-
-        ################################pętla!!!!!!#################################
-        gumtree_attributes_dict = {'DATA': "Data dodania",
-                                   'POWIERZCHNIA': "Wielkość (m2)",
-                                   'SPRZEDAWCA': "Na sprzedaż przez"}
+        #DATA, POWIERZCHNIA, SPRZEDAWCA
+            gumtree_attributes_dict = {'date': "Data dodania",
+                                   'area': "Wielkość (m2)",
+                                   'seller': "Na sprzedaż przez"}
         flat_data = {}
         for key, value in gumtree_attributes_dict.items():
             flat_attributes = soup.find("div", {"class": 'vip-details'})
@@ -143,21 +140,19 @@ class GrumtreeScraper(MainScraper):
                 data = attribute_value.string
                 data = data.strip()
                 flat_data[key] = data
-            except AttributeError as error:
+            except AttributeError:
                 flat_data[key] = 0
-        args.date = flat_data['DATA']
-        args.area = float(flat_data['POWIERZCHNIA'])
-        args.seller = flat_data['SPRZEDAWCA']
-        # cena za m2
+        args.date = flat_data['date']
+        args.area = float(flat_data['area'])
+        args.seller = flat_data['seller']
+        # CENA ZA M2
         try:
-            args.pricem2 = int(float(args.price) / float(args.area))
+            args.m2price = int(float(args.price) / float(args.area))
         except (UnicodeEncodeError, ValueError, ZeroDivisionError):
-            args.pricem2 = 0
+            args.m2price = 0
 
 
-
-
-class FlatData(BeautifulSoup):
+class FlatData:
     def __init__(self, site="Serwis", title="Tytuł", district="Dzielnica", price=1, area=1, url="link",
                  seller="Sprzedający", date="2019-01-01"):
         self.site = site
@@ -168,7 +163,8 @@ class FlatData(BeautifulSoup):
         self.url = url
         self.seller = seller
         self.date = date
-        self.pricem2 = int(self.price / self.area)
+        self.m2price = int(self.price / self.area)
+
 
 class MainApplication(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
@@ -305,7 +301,7 @@ class ResultTable(ttk.Treeview):
 
     def add_line(self, args):
         self.table.insert('', 'end', text=args.date, values=(
-            args.price, args.area, args.seller, args.pricem2, args.district, args.title, args.url), )
+            args.price, args.area, args.seller, args.m2price, args.district, args.title, args.url), )
 
     def callback(self, event):
         input_id = self.table.selection()
