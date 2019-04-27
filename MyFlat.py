@@ -6,34 +6,36 @@ import re
 import requests
 import webbrowser
 
-class MainSpider(BeautifulSoup):
+
+class MainScraper(BeautifulSoup):
+
     main_app_running = False
 
     def __init__(self):
 
         self.filter = FlatFilter
-        thread = threading.Thread(target=self.gumtree_main_spider, args=())
+        thread = threading.Thread(target=self.gumtree_main_scraper, args=())
         thread.daemon = True
         thread.start()
 
-    def gumtree_main_spider(self):
-        page: int = 1
-        while page <= self.filter.pages and MainSpider.main_app_running:
+    def gumtree_main_scraper(self):
+        page = 1
+        while page <= self.filter.pages:
             url = 'https://www.gumtree.pl/s-mieszkania-i-domy-sprzedam-i-kupie/warszawa/mieszkanie/page-' + str(
                 page) + '/v1c9073l3200008a1dwp' + str(page)
             print("########   STRONA " + str(page) + ":")
             page += 1
             source_code = requests.get(url)
             plain_text = source_code.text
-            soup = BeautifulSoup(plain_text, features="html.parser")
-            advertisements = soup.find(
-                lambda tag: tag.name == 'div' and tag.get('class') == ['view'])  # TU JEST CIEKAWE!!!
+            plain_text_soup = BeautifulSoup(plain_text, features="html.parser")
+            advertisements = plain_text_soup.find(
+                lambda tag: tag.name == 'div' and tag.get('class') == ['view'])
             for single_ad in advertisements.findAll("div", {"class": "container"}):
-                if MainSpider.main_app_running:
-                    single_flat = MainSpider.gumtree_single_ad_scan(single_ad)
-                    if MainSpider.primary_filter_chceck(single_flat, filter=self.filter):
+                while MainScraper.main_app_running:
+                    single_flat = MainScraper.gumtree_single_ad_scan(single_ad)
+                    if MainScraper.primary_filter_chceck(single_flat, filter=self.filter):
                         single_flat.get_flat_data_gumtree()
-                        if MainSpider.secondary_filter_check(single_flat, filter=self.filter):
+                        if MainScraper.secondary_filter_check(single_flat, filter=self.filter):
                             print("OK 2 + OK 1")
                             my_app.main_frame.result_table.add_line(single_flat)
                         else:
@@ -71,33 +73,33 @@ class MainSpider(BeautifulSoup):
 
     def secondary_filter_check(args, filter):
         if args.pricem2 == 0:
-            price_filter = filter.filter_value_if_no_data
+            price_filter_bool = filter.filter_value_if_no_data
         elif filter.max_price == 0:
-            price_filter = 1
+            price_filter_bool = 1
         elif filter.max_m2_price >= args.pricem2 >= filter.min_m2_price:
-            price_filter = 1
+            price_filter_bool = 1
         else:
-            price_filter = 0
+            price_filter_bool = 0
 
         if args.area == 0:
-            area_filter = filter.filter_value_if_no_data
+            area_filter_bool = filter.filter_value_if_no_data
         elif filter.max_area == 0:
-            area_filter = 1
+            area_filter_bool = 1
         elif filter.max_area >= args.area >= filter.min_area:
-            area_filter = 1
+            area_filter_bool = 1
         else:
-            area_filter = 0
+            area_filter_bool = 0
 
         if args.seller == 0:
-            seller_filter = filter.filter_value_if_no_data
+            seller_filter_bool = filter.filter_value_if_no_data
         elif filter.wanted_seller == "Dowolny":
-            seller_filter = 1
+            seller_filter_bool = 1
         elif filter.wanted_seller == args.seller:
-            seller_filter = 1
+            seller_filter_bool = 1
         else:
-            seller_filter = 0
+            seller_filter_bool = 0
 
-        if price_filter == area_filter == seller_filter == 1:
+        if price_filter_bool == area_filter_bool == seller_filter_bool == 1:
             return True
         else:
             return False
@@ -242,11 +244,11 @@ class OkButtonFrame(tk.Frame):
 
     def ok_button_click(self, box):
         self.apply_filters(box)
-        MainSpider.main_app_running = True
-        self.main_spider = MainSpider()
+        MainScraper.main_app_running = True
+        self.main_spider = MainScraper()
 
     def stop_button_click(self):
-        MainSpider.main_app_running = False
+        MainScraper.main_app_running = False
         print("STOOOOOOP!!!")
 
     def apply_filters(self, box):
