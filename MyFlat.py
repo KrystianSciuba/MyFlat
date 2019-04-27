@@ -20,7 +20,7 @@ class MainScraper(BeautifulSoup):
 
     def gumtree_main_scraper(self):
         page = 1
-        while page <= self.filter.pages:
+        while page <= self.filter.pages and MainScraper.main_app_running:
             url = 'https://www.gumtree.pl/s-mieszkania-i-domy-sprzedam-i-kupie/warszawa/mieszkanie/page-' + str(
                 page) + '/v1c9073l3200008a1dwp' + str(page)
             print("########   STRONA " + str(page) + ":")
@@ -31,7 +31,7 @@ class MainScraper(BeautifulSoup):
             advertisements = plain_text_soup.find(
                 lambda tag: tag.name == 'div' and tag.get('class') == ['view'])
             for single_ad in advertisements.findAll("div", {"class": "container"}):
-                while MainScraper.main_app_running:
+                if MainScraper.main_app_running:
                     single_flat = MainScraper.gumtree_single_ad_scan(single_ad)
                     if MainScraper.primary_filter_chceck(single_flat, filter=self.filter):
                         single_flat.get_flat_data_gumtree()
