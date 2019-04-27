@@ -7,57 +7,27 @@ import requests
 import webbrowser
 
 
-class MainScraper(BeautifulSoup):
+class FlatFilter:
 
+    pages = 5
+    min_price = 300000
+    max_price = 400000
+    wanted_locations = []
+    min_area = 40
+    max_area = 50
+    min_m2_price = 0
+    max_m2_price = 9500
+    wanted_seller = "Dowolny"
+
+    filter_value_if_no_data = 0
+
+
+class MainScraper(BeautifulSoup):
     main_app_running = False
+    filter = FlatFilter()
 
     def __init__(self):
-
-        self.filter = FlatFilter
-        thread = threading.Thread(target=self.gumtree_main_scraper, args=())
-        thread.daemon = True
-        thread.start()
-
-    def gumtree_main_scraper(self):
-        page = 1
-        while page <= self.filter.pages and MainScraper.main_app_running:
-            url = 'https://www.gumtree.pl/s-mieszkania-i-domy-sprzedam-i-kupie/warszawa/mieszkanie/page-' + str(
-                page) + '/v1c9073l3200008a1dwp' + str(page)
-            print("########   STRONA " + str(page) + ":")
-            page += 1
-            source_code = requests.get(url)
-            plain_text = source_code.text
-            plain_text_soup = BeautifulSoup(plain_text, features="html.parser")
-            advertisements = plain_text_soup.find(
-                lambda tag: tag.name == 'div' and tag.get('class') == ['view'])
-            for single_ad in advertisements.findAll("div", {"class": "container"}):
-                if MainScraper.main_app_running:
-                    single_flat = MainScraper.gumtree_single_ad_scan(single_ad)
-                    if MainScraper.primary_filter_chceck(single_flat, filter=self.filter):
-                        single_flat.get_flat_data_gumtree()
-                        if MainScraper.secondary_filter_check(single_flat, filter=self.filter):
-                            print("OK 2 + OK 1")
-                            my_app.main_frame.result_table.add_line(single_flat)
-                        else:
-                            print("OK 1 + NIE OK 2")
-                    else:
-                        print("NIE OK 1")
-
-    def gumtree_single_ad_scan(args):
-        ad_link = args.find('a', {'class': 'href-link'})
-        href = 'https://www.gumtree.pl' + ad_link.get('href')
-        flat_location = args.find("div", {"class": "category-location"})
-        flat_district = flat_location.find("span").string
-        flat_district = flat_district.strip()
-        flat_district = flat_district[31:]  # "mieszkania i domy - sprzedam , Mokotów"
-        flat_price: object = args.find("span", {"class": "amount"})
-        try:
-            flat_price: int = int(str(re.sub("\D", "", flat_price.string)))
-        except AttributeError:
-            flat_price: int  = 0
-
-        single_flat = FlatData(price=flat_price, district=flat_district, url=href)
-        return single_flat
+        GrumtreeScraper()
 
     def primary_filter_chceck(args, filter):
         if filter.min_price <= args.price <= filter.max_price:
@@ -104,39 +74,61 @@ class MainScraper(BeautifulSoup):
         else:
             return False
 
-class FlatFilter:
-    pages = 5
-    min_price = 300000
-    max_price = 400000
-    wanted_locations = []
-    min_area = 40
-    max_area = 50
-    min_m2_price = 0
-    max_m2_price = 9500
-    wanted_seller = "Dowolny"
 
-    filter_value_if_no_data = 0
+class GrumtreeScraper(MainScraper):
+    def __init__(self):
+        thread = threading.Thread(target=self.gumtree_main_scraper, args=())
+        thread.daemon = True
+        thread.start()
 
-class FlatData(BeautifulSoup):
-    def __init__(self, site="Serwis", title="Tytuł", district="Dzielnica", price=1, area=1, url="link",
-                 seller="Sprzedający", date="2019-01-01"):
-        self.site = site
-        self.title = title
-        self.district = district
-        self.price = price
-        self.area = area
-        self.url = url
-        self.seller = seller
-        self.date = date
-        self.pricem2 = int(self.price / self.area)
+    def gumtree_main_scraper(self):
+        page = 1
+        while page <= MainScraper.filter.pages and MainScraper.main_app_running:
+            url = 'https://www.gumtree.pl/s-mieszkania-i-domy-sprzedam-i-kupie/warszawa/mieszkanie/page-' + str(
+                page) + '/v1c9073l3200008a1dwp' + str(page)
+            print("########   STRONA " + str(page) + ":")
+            page += 1
+            source_code = requests.get(url)
+            plain_text = source_code.text
+            plain_text_soup = BeautifulSoup(plain_text, features="html.parser")
+            advertisements = plain_text_soup.find(
+                lambda tag: tag.name == 'div' and tag.get('class') == ['view'])
+            for single_ad in advertisements.findAll("div", {"class": "container"}):
+                if MainScraper.main_app_running:
+                    single_flat = self.gumtree_single_ad_scan(single_ad)
+                    if MainScraper.primary_filter_chceck(single_flat, filter=MainScraper.filter):
+                        self.get_flat_data_gumtree(single_flat)
+                        if MainScraper.secondary_filter_check(single_flat, filter=MainScraper.filter):
+                            print("OK 2 + OK 1")
+                            my_app.main_frame.result_table.add_line(single_flat)
+                        else:
+                            print("OK 1 + NIE OK 2")
+                    else:
+                        print("NIE OK 1")
 
-    def get_flat_data_gumtree(self):
-        source_code = requests.get(self.url)
+    def gumtree_single_ad_scan(self, args):
+        ad_link = args.find('a', {'class': 'href-link'})
+        href = 'https://www.gumtree.pl' + ad_link.get('href')
+        flat_location = args.find("div", {"class": "category-location"})
+        flat_district = flat_location.find("span").string
+        flat_district = flat_district.strip()
+        flat_district = flat_district[31:]  # "mieszkania i domy - sprzedam , Mokotów"
+        flat_price: object = args.find("span", {"class": "amount"})
+        try:
+            flat_price: int = int(str(re.sub("\D", "", flat_price.string)))
+        except AttributeError:
+            flat_price: int = 0
+
+        single_flat = FlatData(price=flat_price, district=flat_district, url=href)
+        return single_flat
+
+    def get_flat_data_gumtree(self, args):
+        source_code = requests.get(args.url)
         plain_text = source_code.text
         soup = BeautifulSoup(plain_text, features="html.parser")
         # TYTUŁ
         for flat_title in soup.find("div", {"class": "vip-title clearfix"}).findAll("span", {'class': 'myAdTitle'}):
-            self.title = flat_title.string
+            args.title = flat_title.string
 
         ################################pętla!!!!!!#################################
         gumtree_attributes_dict = {'DATA': "Data dodania",
@@ -153,15 +145,30 @@ class FlatData(BeautifulSoup):
                 flat_data[key] = data
             except AttributeError as error:
                 flat_data[key] = 0
-        self.date = flat_data['DATA']
-        self.area = float(flat_data['POWIERZCHNIA'])
-        self.seller = flat_data['SPRZEDAWCA']
+        args.date = flat_data['DATA']
+        args.area = float(flat_data['POWIERZCHNIA'])
+        args.seller = flat_data['SPRZEDAWCA']
         # cena za m2
         try:
-            self.pricem2 = int(float(self.price) / float(self.area))
+            args.pricem2 = int(float(args.price) / float(args.area))
         except (UnicodeEncodeError, ValueError, ZeroDivisionError):
-            self.pricem2 = 0
+            args.pricem2 = 0
 
+
+
+
+class FlatData(BeautifulSoup):
+    def __init__(self, site="Serwis", title="Tytuł", district="Dzielnica", price=1, area=1, url="link",
+                 seller="Sprzedający", date="2019-01-01"):
+        self.site = site
+        self.title = title
+        self.district = district
+        self.price = price
+        self.area = area
+        self.url = url
+        self.seller = seller
+        self.date = date
+        self.pricem2 = int(self.price / self.area)
 
 class MainApplication(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
@@ -245,7 +252,8 @@ class OkButtonFrame(tk.Frame):
     def ok_button_click(self, box):
         self.apply_filters(box)
         MainScraper.main_app_running = True
-        self.main_spider = MainScraper()
+#        self.gumtree = GrumtreeScraper()
+        self.main_scraper = MainScraper()
 
     def stop_button_click(self):
         MainScraper.main_app_running = False
@@ -267,6 +275,7 @@ class OkButtonFrame(tk.Frame):
         print(FlatFilter.min_m2_price)
         print(FlatFilter.max_m2_price)
         print(FlatFilter.pages)
+
 
 class ResultTable(ttk.Treeview):
     def __init__(self, parent):
