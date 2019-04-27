@@ -8,6 +8,7 @@ import webbrowser
 
 
 class FlatFilter:
+
     pages = 5
     min_price = 300000
     max_price = 400000
@@ -19,10 +20,22 @@ class FlatFilter:
     wanted_seller = "Dowolny"
     filter_value_if_no_data = 0
 
-
 class MainScraper(BeautifulSoup):
     main_app_running = False
     filter = FlatFilter()
+
+    class FlatFilter:
+
+        pages = 5
+        min_price = 300000
+        max_price = 400000
+        wanted_locations = []
+        min_area = 40
+        max_area = 50
+        min_m2_price = 0
+        max_m2_price = 9500
+        wanted_seller = "Dowolny"
+        filter_value_if_no_data = 0
 
     def __init__(self):
         GrumtreeScraper()
@@ -124,7 +137,7 @@ class GrumtreeScraper(MainScraper):
         source_code = requests.get(args.url)
         plain_text = source_code.text
         soup = BeautifulSoup(plain_text, features="html.parser")
-        # TYTUŁ
+        # TYTUŁ OGŁOSZENIA
         for flat_title in soup.find("div", {"class": "vip-title clearfix"}).findAll("span", {'class': 'myAdTitle'}):
             args.title = flat_title.string
         #DATA, POWIERZCHNIA, SPRZEDAWCA
