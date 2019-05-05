@@ -20,22 +20,10 @@ class FlatFilter:
     wanted_seller = "Dowolny"
     filter_value_if_no_data = 0
 
+
 class MainScraper(BeautifulSoup):
     main_app_running = False
     filter = FlatFilter()
-
-    class FlatFilter:
-
-        pages = 5
-        min_price = 300000
-        max_price = 400000
-        wanted_locations = []
-        min_area = 40
-        max_area = 50
-        min_m2_price = 0
-        max_m2_price = 9500
-        wanted_seller = "Dowolny"
-        filter_value_if_no_data = 0
 
     def __init__(self):
         GrumtreeScraper()
@@ -104,7 +92,7 @@ class GrumtreeScraper(MainScraper):
             plain_text_soup = BeautifulSoup(plain_text, features="html.parser")
             advertisements = plain_text_soup.find(
                 lambda tag: tag.name == 'div' and tag.get('class') == ['view'])
-            for single_ad in advertisements.findAll("div", {"class": "container"}):
+            for single_ad in advertisements.findAll("div", {"class": "tileV1"}):
                 if MainScraper.main_app_running:
                     single_flat = self.gumtree_single_ad_scan(single_ad)
                     if MainScraper.primary_filter_chceck(single_flat, filter=MainScraper.filter):
@@ -123,8 +111,8 @@ class GrumtreeScraper(MainScraper):
         flat_location = args.find("div", {"class": "category-location"})
         flat_district = flat_location.find("span").string
         flat_district = flat_district.strip()
-        flat_district = flat_district[31:]  # "mieszkania i domy - sprzedam , Mokotów"
-        flat_price: object = args.find("span", {"class": "amount"})
+        flat_district = flat_district[30:]  # "mieszkania i domy - sprzedam, Mokotów"
+        flat_price: object = args.find("span", {"class": "ad-price"})
         try:
             flat_price: int = int(str(re.sub("\D", "", flat_price.string)))
         except AttributeError:
@@ -166,7 +154,7 @@ class GrumtreeScraper(MainScraper):
 
 
 class FlatData:
-    def __init__(self, site="Serwis", title="Tytuł", district="Dzielnica", price=1, area=1, url="link",
+    def __init__(self, site="Serwis", title="Tytuł", district="Dzielnica", price=100000, area=10, url="link",
                  seller="Sprzedający", date="2019-01-01"):
         self.site = site
         self.title = title
@@ -177,6 +165,17 @@ class FlatData:
         self.seller = seller
         self.date = date
         self.m2price = int(self.price / self.area)
+
+    def print_flat_data(self):
+        print("serwis: " + str(self.site))
+        print("tytuł: " + str(self.title))
+        print("dzielnica: " + str(self.district))
+        print("cena: " + str(self.price))
+        print("powierzchnia: " + str(self.area))
+        print("link: " + str(self.url))
+        print("sprzedawca: " + str(self.seller))
+        print("data: " + str(self.date))
+        print("cena za m2: " + str(self.m2price))
 
 
 class MainApplication(tk.Frame):
