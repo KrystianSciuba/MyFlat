@@ -1,4 +1,4 @@
-main_app_running = True
+main_app_running = False
 
 
 class FlatFilter:

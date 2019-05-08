@@ -3,7 +3,8 @@ from tkinter import ttk
 import appdata
 import scrapers
 import webbrowser
-
+import time
+import threading
 
 class DistrictButtonsFrame:
     def __init__(self, parent):
@@ -133,9 +134,22 @@ class ResultTable:
 
         self.table.bind("<Double-Button-1>", self.callback)
 
+        thread = threading.Thread(target=self.import_data_from_database, args=())
+        thread.daemon = True
+        thread.start()
+
     def add_line(self, args):
         self.table.insert('', 'end', text=args.date, values=(
             args.price, args.area, args.seller, args.m2price, args.district, args.title, args.url), )
+
+    def import_data_from_database(self):
+        while not appdata.main_app_running:
+            time.sleep(1)
+
+        while appdata.main_app_running:
+            while appdata.flats:
+                self.add_line(appdata.flats.pop())
+            time.sleep(1)
 
     def callback(self, event):
         input_id = self.table.selection()
