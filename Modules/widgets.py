@@ -74,9 +74,9 @@ class OkButtonFrame:
 
     def __init__(self, parent, box):
         self.parent = parent
-        self.ok_button = tk.Button(parent, text="go go go go go",
+        self.ok_button = tk.Button(parent, text="START",
                                    command=lambda temp=box: self.ok_button_click(temp)).grid(column=1, row=4)
-        self.stop_button = tk.Button(parent, text="HOLD! HOLD!", command=self.stop_button_click).grid(column=3, row=4)
+        self.stop_button = tk.Button(parent, text="STOP", command=self.stop_button_click).grid(column=3, row=4)
 
     @staticmethod
     def ok_button_click(box):
@@ -87,7 +87,7 @@ class OkButtonFrame:
     @staticmethod
     def stop_button_click():
         appdata.main_app_running = False
-        print("STOP!!!")
+        print("STOPPED!")
 
     @staticmethod
     def apply_filters(box):
@@ -113,14 +113,14 @@ class ResultTable:
         self.parent = parent
 
         self.table = ttk.Treeview(parent, columns=(
-            "DATA", "CENA", "POW.", "SPRZEDAWCA", "CENA ZA M2", "DZIELNICA", "TYTUŁ", "URL"))
-        self.table.heading('#0', text="DATA", command=lambda: self.treeview_sort_column("DATA", False))
-        self.table.heading('#1', text="CENA", command=lambda: self.treeview_sort_column("CENA", False))
-        self.table.heading('#2', text="POW.", command=lambda: self.treeview_sort_column("POW.", False))
-        self.table.heading('#3', text="SPRZEDAWCA", command=lambda: self.treeview_sort_column("SPRZEDAWCA", False))
-        self.table.heading('#4', text="CENA ZA M2", command=lambda: self.treeview_sort_column("CENA ZA M2", False))
-        self.table.heading('#5', text="DZIELNICA", command=lambda: self.treeview_sort_column("DZIELNICA", False))
-        self.table.heading('#6', text="TYTUŁ", command=lambda: self.treeview_sort_column("TYTUŁ", False))
+            "DATE", "PRICE", "AREA", "SELLER", "M2 PRICE", "DISTRICT", "TITLE", "URL"))
+        self.table.heading('#0', text="DATE", command=lambda: self.treeview_sort_column("DATE", False))
+        self.table.heading('#1', text="PRICE", command=lambda: self.treeview_sort_column("PRICE", False))
+        self.table.heading('#2', text="AREA", command=lambda: self.treeview_sort_column("AREA", False))
+        self.table.heading('#3', text="SELLER", command=lambda: self.treeview_sort_column("SELLER", False))
+        self.table.heading('#4', text="M2 PRICE", command=lambda: self.treeview_sort_column("M2 PRICE", False))
+        self.table.heading('#5', text="DISTRICT", command=lambda: self.treeview_sort_column("DISTRICT", False))
+        self.table.heading('#6', text="TITLE", command=lambda: self.treeview_sort_column("TITLE", False))
         self.table.heading('#7', text="URL", command=lambda: self.treeview_sort_column("URL", False))
         self.table.column('#0', width=100, stretch=tk.NO)
         self.table.column('#1', width=75, stretch=tk.NO)

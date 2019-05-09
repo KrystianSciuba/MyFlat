@@ -47,7 +47,7 @@ class MainScraper:
 
         if args.seller == 0:
             seller_filter_bool = filter.filter_value_if_no_data
-        elif filter.wanted_seller == "Dowolny":
+        elif filter.wanted_seller == "Any":
             seller_filter_bool = 1
         elif filter.wanted_seller == args.seller:
             seller_filter_bool = 1
@@ -71,7 +71,7 @@ class GrumtreeScraper:
         while page <= MainScraper.filter.pages and appdata.main_app_running:
             url = 'https://www.gumtree.pl/s-mieszkania-i-domy-sprzedam-i-kupie/warszawa/mieszkanie/page-' + str(
                 page) + '/v1c9073l3200008a1dwp' + str(page)
-            print("########   STRONA " + str(page) + ":")
+            print("########   PAGE " + str(page) + ":")
             page += 1
             source_code = requests.get(url)
             plain_text = source_code.text
@@ -84,14 +84,14 @@ class GrumtreeScraper:
                     if MainScraper.primary_filter_check(single_flat, filter=MainScraper.filter):
                         self.gumtree_get_flat_data(single_flat)
                         if MainScraper.secondary_filter_check(single_flat, filter=MainScraper.filter):
-                            print("OK 2 + OK 1")
+                            print("OK!")
                             appdata.flats.append(single_flat)
                             appdata.flats[-1].print_flat_data()
                             #my_app.main_frame.result_table.add_line(single_flat)
                         else:
-                            print("OK 1 + NIE OK 2")
+                            print("NOT OK 2")
                     else:
-                        print("NIE OK 1")
+                        print("NOT OK 1")
 
     @staticmethod
     def gumtree_single_ad_scan(args):
@@ -115,10 +115,10 @@ class GrumtreeScraper:
         source_code = requests.get(args.url)
         plain_text = source_code.text
         soup = BeautifulSoup(plain_text, features="html.parser")
-        # TYTUŁ OGŁOSZENIA
+        # TITLE
         for flat_title in soup.find("div", {"class": "vip-title clearfix"}).findAll("span", {'class': 'myAdTitle'}):
             args.title = flat_title.string
-            # DATA, POWIERZCHNIA, SPRZEDAWCA
+            # DATE, AREA, SELLER
             gumtree_attributes_dict = {'date': "Data dodania",
                                        'area': "Wielkość (m2)",
                                        'seller': "Na sprzedaż przez"}
@@ -136,7 +136,7 @@ class GrumtreeScraper:
         args.date = flat_data['date']
         args.area = float(flat_data['area'])
         args.seller = flat_data['seller']
-        # CENA ZA M2
+        # M2 PRICE
         try:
             args.m2price = int(float(args.price) / float(args.area))
         except (UnicodeEncodeError, ValueError, ZeroDivisionError):
