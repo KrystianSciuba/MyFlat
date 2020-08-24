@@ -4,3 +4,6 @@ pyvenv.cfg
 /Include
 /Lib
 /Scripts
+Modules/DataBaseTest.py
+Modules/__pycache__
+MyFlat.py
